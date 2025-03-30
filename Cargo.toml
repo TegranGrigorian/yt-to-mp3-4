@@ -1,0 +1,8 @@
+[package]
+name = "yt-to-mp3-4"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+rustube = "0.6.0"
+tokio = "1.44.1"
