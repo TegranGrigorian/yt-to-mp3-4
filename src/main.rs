@@ -3,6 +3,7 @@ pub mod backend {
     pub mod UserInput;
     pub mod Mp4Convert;
     pub mod Mp3Convert;
+    pub mod os_util; // Corrected the module name to os_util to match the file name
 }
 pub mod CommandLineTest;
 use tokio;
