@@ -7,13 +7,15 @@ pub fn handle_download(
     format: String,
     video_type: String,
     status_message: Arc<Mutex<String>>,
+    ctx: egui::Context, // Pass the egui context
 ) {
     // Spawn a new thread to handle the download
-    thread::spawn(move || {
+    std::thread::spawn(move || {
         // Update the status message to "Downloading {Video Name}"
         if let Ok(mut status) = status_message.lock() {
             *status = format!("Downloading {} as {}", video_type, format);
         }
+        ctx.request_repaint(); // Force GUI repaint
 
         // Simulate the download process (replace this with actual backend logic)
         let result = backend::Mp3Convert::ConvertMp3::ConvertMp3::new(input_url.clone(), format.clone()).convert();
@@ -25,9 +27,9 @@ pub fn handle_download(
                 Err(err) => format!("Download failed: {}", err),
             };
         }
+        ctx.request_repaint(); // Force GUI update
     });
 }
-
 pub fn download_screen(
     ui: &mut egui::Ui,
     input_url: &mut String,

@@ -74,32 +74,59 @@ impl eframe::App for App {
                 }
                 AppState::DownloadScreen => {
                     // Clone the variables before calling `download_screen`
-                    let input_url = self.input_url.clone();
+                    let mut input_url = self.input_url.clone(); // Use a local variable for input_url
                     let format = self.format.clone();
                     let video_type = self.video_type.clone();
                     let status_message = Arc::clone(&self.status_message);
+                    let ctx = ctx.clone(); // Clone the egui context
                 
+                    // Define the "Download" button callback
+                    let mut on_download = {
+                        let input_url = input_url.clone();
+                        let format = format.clone();
+                        let video_type = video_type.clone();
+                        let status_message = Arc::clone(&status_message);
+                        let ctx = ctx.clone();
+                
+                        move || {
+                            // Call the `handle_download` function
+                            download_logic::handle_download(
+                                input_url.clone(),
+                                format.clone(),
+                                video_type.clone(),
+                                Arc::clone(&status_message),
+                                ctx.clone(),
+                            );
+                        }
+                    };
+                
+                    // Define the "Convert Again" button callback
+                    let mut on_convert_again = {
+                        let status_message = Arc::clone(&self.status_message);
+                        let state = &mut self.state;
+                        let input_url = &mut self.input_url;
+                        move || {
+                            *state = AppState::FormatAndDirectorySelection;
+                            input_url.clear(); // Clear the text box
+                            if let Ok(mut status) = status_message.lock() {
+                                *status = "All dependencies are available.".to_string(); // Reset the label
+                            }
+                        }
+                    };
+                
+                    // Call the `download_screen` function
                     download_screen::download_screen(
                         ui,
-                        &mut self.input_url,
-                        &mut self.status_message.lock().unwrap(),
-                        &self.format,
-                        &self.video_type,
-                        &mut move || {
-                            // Clone the variables inside the closure
-                            let input_url = input_url.clone();
-                            let format = format.clone();
-                            let video_type = video_type.clone();
-                            let status_message = Arc::clone(&status_message);
-                
-                            // Call the `handle_download` function
-                            download_logic::handle_download(input_url, format, video_type, status_message);
-                        },
-                        &mut || {
-                            // Callback for "Convert Again" button
-                            self.state = AppState::FormatAndDirectorySelection;
-                        },
+                        &mut input_url, // Pass the local variable for editing
+                        status_message, // Pass the cloned status message
+                        &format,
+                        &video_type,
+                        &mut on_download,
+                        &mut on_convert_again,
                     );
+                
+                    // Update self.input_url after `download_screen` is done
+                    self.input_url = input_url;
                 }
                 AppState::SettingsScreen => {
                     settings_screen::settings_screen(ui, &mut || self.state = AppState::FormatAndDirectorySelection);
