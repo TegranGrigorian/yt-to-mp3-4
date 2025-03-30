@@ -6,7 +6,7 @@ I wanted to write this project because all the Yt converters are either sketchy 
 
 This project is completley open source and written by me. Anyone can download it or improve it. 
 
-Im also using this project to learn Rust better, I want to be a systems engineer and leverage Rust benefits in error handeling and type saftey
+Im also using this project to learn Rust, I want to be a systems engineer and leverage Rust's benefits in error handeling and type saftey
 
 This project should be used for anyone by anyone, I wrote this project using Rust OOP so it could also be used as a libary or include in someone elses project if needed!
 
