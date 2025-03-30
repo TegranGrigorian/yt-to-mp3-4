@@ -1,5 +1,5 @@
 pub fn test() {
-    let video_url = "https://www.youtube.com/watch?v=wMH0e8kIZtE"; // Welcome to Heartbreak by Kanye West
+    let video_url = "https://www.youtube.com/watch?v=wMH0e8kIZtE"; // Welcome to Heartbreak by Kanye West :)
     let output = std::process::Command::new("yt-dlp")
         .arg("-o")
         .arg("output.mp4")
