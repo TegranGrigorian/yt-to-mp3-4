@@ -34,6 +34,17 @@ fn main() {
     //     .block_on(async {
     //         convert_mp4.convert().await;
     //     });
+    
+    // Start the GUI application
+    let options = NativeOptions::default();
+    if let Err(e) = eframe::run_native(
+        "Youtube to Mp3-4 Converter", 
+        options,
+        Box::new(|_cc| Ok(Box::new(App::default()))), // Initialize the App struct
+    ) {
+        eprintln!("Error running the application: {}", e);
+    }
+
     let user_input = backend::UserInput::UserInput::read_from_console("Enter a video URL".to_string());
     let convert_mp3 = backend::Mp3Convert::ConvertMp3::ConvertMp3::new(
         user_input.clone(),
@@ -50,13 +61,5 @@ fn main() {
             let elapsed_time = start_time.elapsed();
             println!("Download completed in {:.2?} seconds", elapsed_time);
         });
-    // Start the GUI application
-    let options = NativeOptions::default();
-    if let Err(e) = eframe::run_native(
-        "Youtube to Mp3-4 Converter", 
-        options,
-        Box::new(|_cc| Ok(Box::new(App::default()))), // Initialize the App struct
-    ) {
-        eprintln!("Error running the application: {}", e);
-    }
+    
 }
