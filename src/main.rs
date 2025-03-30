@@ -15,7 +15,7 @@ pub mod frontend {
     pub mod screens; // This module contains different screens for the GUI
     pub mod style; // This module contains the main window and other windows for the GUI
     pub mod app;
-    pub mod events;
+    pub mod app_state; // This module contains the application state, used for managing the state of the GUI
 }
 pub mod CommandLineTest;
 use tokio;

@@ -1,10 +1,14 @@
 use std::path::PathBuf;
-use dirs::audio_dir;
-use crate::backend::{self, Mp3Convert::ConvertMp3::ConvertMp3};
+use std::sync::{Arc, Mutex};
+use crate::frontend::screens::main_screen::main_window;
+use crate::backend;
 
+use super::screens::single_screen::SingleScreen; // Ensure this module is available for checking dependencies
 pub struct App {
     pub input_url: String,
-    pub status_message: std::sync::Arc<std::sync::Mutex<String>>,
+    pub status_message: Arc<Mutex<String>>,
+    pub format: String,       // Selected format (MP3 or MP4)
+    pub output_dir: PathBuf,  // Selected output directory
 }
 
 impl App {
@@ -34,65 +38,25 @@ impl App {
 
         Self {
             input_url: String::new(),
-            status_message: std::sync::Arc::new(std::sync::Mutex::new(status_message)),
+            status_message: Arc::new(Mutex::new(status_message)),
+            format: "MP3".to_string(), // Default format
+            output_dir: PathBuf::new(), // Default to empty path
         }
     }
 }
-
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("YouTube to MP3 Converter");
+            let mut status_message = self.status_message.lock().unwrap();
 
-            ui.horizontal(|ui| {
-                ui.label("YouTube URL:");
-                ui.text_edit_singleline(&mut self.input_url);
-            });
-
-            if ui.button("Download MP3").clicked() {
-                if self.input_url.is_empty() {
-                    if let Ok(mut status) = self.status_message.lock() {
-                        *status = "Please enter a valid URL.".to_string();
-                    }
-                } else {
-                    if let Ok(mut status) = self.status_message.lock() {
-                        *status = "Downloading...".to_string();
-                    }
-
-                    let url = self.input_url.clone();
-                    let music_dir = dirs::audio_dir().unwrap_or_else(|| PathBuf::from("output"));
-                    let output_path = music_dir.join("output.mp3");
-                    let status_message = std::sync::Arc::new(std::sync::Mutex::new(self.status_message.clone()));
-                    let ctx_clone = ctx.clone();
-
-                    let status_message_clone = status_message.clone();
-                    std::thread::spawn(move || {
-                        let convert_mp3 = ConvertMp3::new(url, output_path.to_string_lossy().to_string());
-                        let mut new_status_message = String::new();
-                        match convert_mp3.convert() {
-                            Ok(_) => {
-                                new_status_message = format!(
-                                    "Download complete! File saved to: {}",
-                                    output_path.display()
-                                );
-                            }
-                            Err(err) => {
-                                new_status_message = format!("Download failed: {}", err);
-                            }
-                        }
-                        let mut status = status_message_clone.lock().unwrap();
-                        if let Ok(mut status_guard) = status.lock() {
-                            *status_guard = new_status_message;
-                        }
-
-                        ctx_clone.request_repaint();
-                    });
-                }
-            }
-
-            if let Ok(status) = self.status_message.lock() {
-                ui.label(status.clone());
-            }
+            // Pass the new fields to the main_window function
+            main_window(
+                ui,
+                &mut self.input_url,
+                &mut status_message,
+                &mut self.format,
+                &mut self.output_dir,
+            );
         });
     }
 }
