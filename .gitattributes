@@ -1,0 +1,2 @@
+bin/windows/ffmpeg.exe filter=lfs diff=lfs merge=lfs -text
+bin/windows/yt-dlp.exe filter=lfs diff=lfs merge=lfs -text
