@@ -10,7 +10,7 @@ Im also using this project to learn Rust, I want to be a systems engineer and le
 
 This project should be used for anyone by anyone, I wrote this project using Rust OOP so it could also be used as a libary or include in someone elses project if needed!
 
-Im currently enjoying the programming laungauge alot and I hope to continue using rust for the backend devolpment of this app.
+Im currently enjoying the programming laungauge alot and I hope to continue using rust for the devolpment of this app.
 
 Eventually I will add a installer for windows and linux so supportes or people who want to use this project dont need to build it with the rustc.
 
