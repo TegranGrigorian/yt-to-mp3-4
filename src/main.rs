@@ -19,47 +19,52 @@ pub mod frontend {
 }
 pub mod CommandLineTest;
 use tokio;
-fn main() {
-    // CommandLineTest::test(); //for debugging with cli tool yt-dlp
-    // let user_input = backend::UserInput::UserInput::read_from_console("Enter a video URL".to_string());
-    // let convert_mp4 = backend::Mp4Convert::ConvertMp4::ConvertMp4::new(
-    //     user_input.clone(),
-    //     "output.mp4".to_string(),
-    // );
 
-    // tokio::runtime::Builder::new_current_thread()
-    //     .enable_all()
-    //     .build()
-    //     .unwrap()
-    //     .block_on(async {
-    //         convert_mp4.convert().await;
-    //     });
-    
-    // Start the GUI application
-    let options = NativeOptions::default();
+async fn test_tokio_sleep() {
+    println!("Before sleep...");
+    tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+    println!("After sleep...");
+}
+fn main() {
+    // Set up a panic hook to catch any panics and log them
+    std::panic::set_hook(Box::new(|panic_info| {
+        eprintln!("Panic occurred: {:?}", panic_info);
+    }));
+
+    // Create the Tokio runtime
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("Failed to create Tokio runtime");
+
+    // Run the GUI application within the Tokio runtime
+    runtime.block_on(async_main());
+}
+
+async fn async_main() {
+    let options = eframe::NativeOptions::default();
     if let Err(e) = eframe::run_native(
-        "Youtube to Mp3-4 Converter", 
+        "YouTube to MP3 Converter",
         options,
-        Box::new(|_cc| Ok(Box::new(App::default()))), // Initialize the App struct
+        Box::new(|_cc| Ok(Box::new(crate::frontend::app::App::new()))),
     ) {
         eprintln!("Error running the application: {}", e);
     }
+}
+fn check_dependencies() -> bool {
+    let yt_dlp_path = backend::os_util::OSUtil::get_yt_dlp_path();
+    let ffmpeg_path = backend::os_util::OSUtil::get_ffmpeg_path();
 
-    let user_input = backend::UserInput::UserInput::read_from_console("Enter a video URL".to_string());
-    let convert_mp3 = backend::Mp3Convert::ConvertMp3::ConvertMp3::new(
-        user_input.clone(),
-        "output.mp3".to_string(), // specify the output file name
-    );
-    let start_time = std::time::Instant::now();
-    // Create a Tokio runtime to run the async function 
-    tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .unwrap()
-        .block_on(async {
-            convert_mp3.convert().await; // Call the async convert method
-            let elapsed_time = start_time.elapsed();
-            println!("Download completed in {:.2?} seconds", elapsed_time);
-        });
-    
+    let yt_dlp_exists = yt_dlp_path.exists();
+    let ffmpeg_exists = ffmpeg_path.exists();
+
+    if !yt_dlp_exists {
+        eprintln!("Error: yt-dlp executable not found at {:?}", yt_dlp_path);
+    }
+
+    if !ffmpeg_exists {
+        eprintln!("Error: ffmpeg executable not found at {:?}", ffmpeg_path);
+    }
+
+    yt_dlp_exists && ffmpeg_exists
 }

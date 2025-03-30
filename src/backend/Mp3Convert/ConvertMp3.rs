@@ -1,9 +1,12 @@
+use crate::backend::multithread_utils;
 use crate::backend::os_util::OSUtil;
-use crate::backend::multithread_utils::MultiThreadUtils; // for getting the number of cpu cores
-use std::process::Command;
+// use crate::backend::multithread_utils::MultiThreadUtils; // for getting the number of CPU cores
+// use std::process::Command;
+use std::process::Output;
+
 pub struct ConvertMp3 {
     input_file: String,
-    output_file: String, //bruh rust compiler this aint read we determined it, eventually the gui can do this too
+    output_file: String,
 }
 
 impl ConvertMp3 {
@@ -14,18 +17,23 @@ impl ConvertMp3 {
         }
     }
 
-    pub async fn convert(&self) {
+    pub fn convert(&self) -> Result<(), String> {
+        println!("Starting conversion for URL: {}", self.input_file);
+
         let yt_dlp_path = OSUtil::get_yt_dlp_path();
         let ffmpeg_path = OSUtil::get_ffmpeg_path();
         let output_folder = OSUtil::get_output_folder();
 
         if !ffmpeg_path.exists() {
             eprintln!("Error: ffmpeg executable not found at {}", ffmpeg_path.display());
-            return;
+            return Err("ffmpeg executable not found".to_string());
         }
-        let thread_arg = format!("ffmpeg:-threads {}", MultiThreadUtils::get_num_cpus() - 1); // Use the number of CPU cores for ffmpeg processing
+
+        let thread_arg = format!("ffmpeg:-threads {}", multithread_utils::MultiThreadUtils::get_num_cpus() - 1);
         let output_file_path = output_folder.join("%(title)s.mp3");
-        let output = Command::new(yt_dlp_path)
+
+        println!("Executing yt-dlp command...");
+        let output = std::process::Command::new(yt_dlp_path)
             .env("FFMPEG", ffmpeg_path)
             .arg("-o")
             .arg(output_file_path.to_str().unwrap())
@@ -38,27 +46,39 @@ impl ConvertMp3 {
             .arg("24")
             .arg("--extractor-args")
             .arg("youtube:player_client=web")
-            .arg("--postprocessor-args") // Pass custom arguments to ffmpeg
-            .arg(&thread_arg) //borrow var
+            .arg("--postprocessor-args")
+            .arg(&thread_arg)
             .arg(&self.input_file)
             .output();
 
         match output {
             Ok(output) if output.status.success() => {
-                println!(
-                    "Audio downloaded successfully to: {}",
-                    output_file_path.to_str().unwrap()
-                );
+                println!("yt-dlp executed successfully.");
+                Ok(())
             }
             Ok(output) => {
-                eprintln!(
-                    "Failed to download audio: {}",
-                    String::from_utf8_lossy(&output.stderr)
-                );
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                let error_message = format!("yt-dlp failed with error: {}", stderr);
+                eprintln!("{}", error_message);
+                Err(error_message)
             }
             Err(e) => {
-                eprintln!("Error executing yt-dlp command: {}", e);
+                let error_message = format!("Failed to execute yt-dlp: {}", e);
+                eprintln!("{}", error_message);
+                Err(error_message)
             }
+        }
+    }
+
+    fn handle_output(&self, output: Output) -> Result<(), String> {
+        if output.status.success() {
+            println!("yt-dlp executed successfully.");
+            Ok(())
+        } else {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let error_message = format!("yt-dlp failed with error: {}", stderr);
+            eprintln!("{}", error_message);
+            Err(error_message)
         }
     }
 }

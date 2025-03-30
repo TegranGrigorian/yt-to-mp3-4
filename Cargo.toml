@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+arc = "0.0.1"
 dirs = "6.0.0"
 eframe = "0.31.1"
 egui = "0.31.1"

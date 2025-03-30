@@ -6,12 +6,21 @@ pub struct OSUtil;
 impl OSUtil {
     //get ytdlp for os
     pub fn get_yt_dlp_path() -> PathBuf {
-        if cfg!(target_os = "windows") {
-            PathBuf::from("./bin/windows/yt-dlp.exe")
-        } else {
-            PathBuf::from("./bin/linux/yt-dlp")
-        }
+    let path = if cfg!(target_os = "windows") {
+        PathBuf::from("./bin/windows/yt-dlp.exe")
+    } else {
+        PathBuf::from("./bin/linux/yt-dlp")
+    };
+
+    let absolute_path = std::fs::canonicalize(&path).unwrap_or_else(|_| path.clone());
+    println!("Resolved yt-dlp path: {:?}", absolute_path);
+
+    if !absolute_path.exists() {
+        eprintln!("Error: yt-dlp executable not found at {:?}", absolute_path);
     }
+
+    absolute_path
+}
     //get ffmpeg for os
     pub fn get_ffmpeg_path() -> PathBuf {
         if cfg!(target_os = "windows") {
