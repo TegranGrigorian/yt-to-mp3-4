@@ -1,6 +1,6 @@
 use crate::backend::os_util::OSUtil;
+use crate::backend::multithread_utils::MultiThreadUtils; // for getting the number of cpu cores
 use std::process::Command;
-
 pub struct ConvertMp3 {
     input_file: String,
     output_file: String, //bruh rust compiler this aint read we determined it, eventually the gui can do this too
@@ -23,9 +23,8 @@ impl ConvertMp3 {
             eprintln!("Error: ffmpeg executable not found at {}", ffmpeg_path.display());
             return;
         }
-
+        let thread_arg = format!("ffmpeg:-threads {}", MultiThreadUtils::get_num_cpus() - 1); // Use the number of CPU cores for ffmpeg processing
         let output_file_path = output_folder.join("%(title)s.mp3");
-
         let output = Command::new(yt_dlp_path)
             .env("FFMPEG", ffmpeg_path)
             .arg("-o")
@@ -36,7 +35,11 @@ impl ConvertMp3 {
             .arg("--audio-quality")
             .arg("0")
             .arg("--concurrent-fragments")
-            .arg("4")
+            .arg("24")
+            .arg("--extractor-args")
+            .arg("youtube:player_client=web")
+            .arg("--postprocessor-args") // Pass custom arguments to ffmpeg
+            .arg(&thread_arg) //borrow var
             .arg(&self.input_file)
             .output();
 

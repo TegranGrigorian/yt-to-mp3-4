@@ -3,6 +3,7 @@ pub mod backend {
     pub mod UserInput;
     pub mod Mp4Convert;
     pub mod Mp3Convert;
+    pub mod multithread_utils;
     pub mod os_util; // Corrected the module name to os_util to match the file name
 }
 pub mod CommandLineTest;
@@ -27,6 +28,7 @@ fn main() {
         user_input.clone(),
         "output.mp3".to_string(), // specify the output file name
     );
+    let start_time = std::time::Instant::now();
     // Create a Tokio runtime to run the async function 
     tokio::runtime::Builder::new_current_thread()
         .enable_all()
@@ -34,5 +36,7 @@ fn main() {
         .unwrap()
         .block_on(async {
             convert_mp3.convert().await; // Call the async convert method
+            let elapsed_time = start_time.elapsed();
+            println!("Download completed in {:.2?} seconds", elapsed_time);
         });
 }
