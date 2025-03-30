@@ -1,14 +1,18 @@
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
-use crate::frontend::screens::main_screen::main_window;
+use crate::frontend::app_state::AppState;
+use crate::frontend::screens::{main_screen, settings_screen, download_screen, download_logic};
 use crate::backend;
 
-use super::screens::single_screen::SingleScreen; // Ensure this module is available for checking dependencies
+use super::screens::video_type;
 pub struct App {
     pub input_url: String,
     pub status_message: Arc<Mutex<String>>,
     pub format: String,       // Selected format (MP3 or MP4)
     pub output_dir: PathBuf,  // Selected output directory
+    pub state: AppState,      // Current application state
+    pub video_type: String,   // "Single" or "Batch"
+    pub download_complete: bool, // Flag to track if the download is complete
 }
 
 impl App {
@@ -41,22 +45,66 @@ impl App {
             status_message: Arc::new(Mutex::new(status_message)),
             format: "MP3".to_string(), // Default format
             output_dir: PathBuf::new(), // Default to empty path
+            state: AppState::FormatAndDirectorySelection, // Start with the first screen
+            video_type: String::new(), // Will be "Single" or "Batch"
+            download_complete: false, // Initially, the download is not complete
         }
     }
 }
+
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            let mut status_message = self.status_message.lock().unwrap();
-
-            // Pass the new fields to the main_window function
-            main_window(
-                ui,
-                &mut self.input_url,
-                &mut status_message,
-                &mut self.format,
-                &mut self.output_dir,
-            );
+            match self.state {
+                AppState::FormatAndDirectorySelection => {
+                    main_screen::format_and_directory_selection(
+                        ui,
+                        &mut self.format,
+                        &mut self.output_dir,
+                        &self.status_message.lock().unwrap(),
+                        &mut || self.state = AppState::VideoTypeSelection,
+                    );
+                }
+                AppState::VideoTypeSelection => {
+                    video_type::video_type_selection(
+                        ui,
+                        &mut self.video_type,
+                        &mut || self.state = AppState::DownloadScreen,
+                    );
+                }
+                AppState::DownloadScreen => {
+                    // Clone the variables before calling `download_screen`
+                    let input_url = self.input_url.clone();
+                    let format = self.format.clone();
+                    let video_type = self.video_type.clone();
+                    let status_message = Arc::clone(&self.status_message);
+                
+                    download_screen::download_screen(
+                        ui,
+                        &mut self.input_url,
+                        &mut self.status_message.lock().unwrap(),
+                        &self.format,
+                        &self.video_type,
+                        &mut move || {
+                            // Clone the variables inside the closure
+                            let input_url = input_url.clone();
+                            let format = format.clone();
+                            let video_type = video_type.clone();
+                            let status_message = Arc::clone(&status_message);
+                
+                            // Call the `handle_download` function
+                            download_logic::handle_download(input_url, format, video_type, status_message);
+                        },
+                        &mut || {
+                            // Callback for "Convert Again" button
+                            self.state = AppState::FormatAndDirectorySelection;
+                        },
+                    );
+                }
+                AppState::SettingsScreen => {
+                    settings_screen::settings_screen(ui, &mut || self.state = AppState::FormatAndDirectorySelection);
+                }
+            }
         });
     }
 }

@@ -1,21 +1,14 @@
-use crate::frontend::components::button;
 use eframe::egui;
 use std::path::PathBuf;
-
-pub fn main_window(
+use rfd;
+pub fn format_and_directory_selection(
     ui: &mut egui::Ui,
-    input_url: &mut String,
-    status_message: &mut String,
-    format: &mut String,       // To store the selected format (MP3 or MP4)
-    output_dir: &mut PathBuf,  // To store the selected output directory
+    format: &mut String,
+    output_dir: &mut PathBuf,
+    status_message: &str,
+    on_next: &mut dyn FnMut(),
 ) {
-    ui.heading("YouTube to MP3/MP4 Converter");
-
-    // Input field for the YouTube URL
-    ui.horizontal(|ui| {
-        ui.label("YouTube URL:");
-        ui.text_edit_singleline(input_url);
-    });
+    ui.heading("Select Format and Output Directory");
 
     // Dropdown for selecting the format
     ui.horizontal(|ui| {
@@ -30,26 +23,25 @@ pub fn main_window(
 
     // Button to select the output directory
     ui.horizontal(|ui| {
-        ui.label("Output Directory:");
-        if button::custom_button(ui, "Choose Directory").clicked() {
-            // Placeholder: Replace this with actual directory selection logic
-            *output_dir = PathBuf::from("C:/Users/Default/Downloads");
-            *status_message = format!("Output directory set to: {}", output_dir.display());
+        ui.label("Output Directory, if none is selected, yt-to-mp3-4 folder in user's music folder:");
+        if ui.button("Choose Directory").clicked() {
+            if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                *output_dir = path;
+            }
+        }
+        if output_dir.as_os_str().is_empty() {
+            if let Some(music_dir) = dirs::audio_dir() {
+                *output_dir = music_dir.join("yt-to-mp3-4");
+            }
         }
         ui.label(output_dir.display().to_string());
     });
 
-    // Button to start the download
-    if button::custom_button(ui, "Download").clicked() {
-        if input_url.is_empty() {
-            *status_message = "Please enter a valid URL.".to_string();
-        } else if output_dir.as_os_str().is_empty() {
-            *status_message = "Please select an output directory.".to_string();
-        } else {
-            *status_message = format!("Downloading as {}...", format);
-        }
-    }
+    // Display dependency status
+    ui.label(status_message);
 
-    // Display the status message
-    ui.label(&status_message.clone());
+    // Next button
+    if ui.button("Next").clicked() {
+        on_next();
+    }
 }
