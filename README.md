@@ -15,17 +15,17 @@ Im currently enjoying the programming laungauge alot and I hope to continue usin
 Eventually I will add a installer for windows and linux so supportes or people who want to use this project dont need to build it with the rustc.
 
 Lastly, this is currently in BETA, I want to eventually add a frontend gui for the user to configure the tool for what ever needs they want. The current configurations I want to add is
-  Mp3, Mp4 or different file type
+      Mp3, Mp4 or different file type
   
-  Download Quality
-  
-  Download Speed(if possible, decrease quality or something)
-  
-  Download albums
-  
-  Download Playlists
-  
-  Please tell me what other suggestions I should add
+      Download Quality
+      
+      Download Speed(if possible, decrease quality or something)
+      
+      Download albums
+      
+      Download Playlists
+      
+      Please tell me what other suggestions I should add
 
 Thank you for reading! Have a good day
 
