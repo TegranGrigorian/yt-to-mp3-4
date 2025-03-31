@@ -99,19 +99,11 @@ impl eframe::App for App {
                 
                     // Define the "Convert Again" button callback
                     let mut on_convert_again = {
-                        let status_message = Arc::clone(&self.status_message);
-                        let state = Arc::new(Mutex::new(self.state.clone())); // Clone the state to avoid borrowing `self`
                         move || {
-                            let status_message = Arc::clone(&status_message);
-                            let state = Arc::clone(&state);
-                            std::thread::spawn(move || {
-                                if let Ok(mut status) = status_message.lock() {
-                                    *status = "All dependencies are available.".to_string(); // Reset the label
-                                }
-                                if let Ok(mut state) = state.lock() {
-                                    *state = AppState::FormatAndDirectorySelection; // Update the state
-                                }
-                            });
+                            std::process::Command::new(std::env::current_exe().unwrap()) // Relaunch the current executable
+                                .spawn()
+                                .expect("Failed to relaunch application");
+                            std::process::exit(0); // Exit the current process
                         }
                     };
                 
