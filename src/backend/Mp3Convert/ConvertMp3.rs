@@ -22,7 +22,7 @@ impl ConvertMp3 {
 
         let yt_dlp_path = OSUtil::get_yt_dlp_path();
         let ffmpeg_path = OSUtil::get_ffmpeg_path();
-        let output_folder = OSUtil::get_output_folder();
+        let output_folder = OSUtil::get_output_folder("mp3");
 
         if !ffmpeg_path.exists() {
             eprintln!("Error: ffmpeg executable not found at {}", ffmpeg_path.display());

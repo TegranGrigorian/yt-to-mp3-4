@@ -20,11 +20,10 @@ impl ConvertMp4 {
 
         let yt_dlp_path = OSUtil::get_yt_dlp_path();
         let ffmpeg_path = OSUtil::get_ffmpeg_path();
-        let output_folder = OSUtil::get_output_folder();
-
-        if !ffmpeg_path.exists() {
-            eprintln!("Error: ffmpeg executable not found at {}", ffmpeg_path.display());
-            return Err("ffmpeg executable not found".to_string());
+        let output_folder = OSUtil::get_output_folder("mp4");
+        if !output_folder.exists() {
+            eprintln!("Error: Output folder does not exist: {}", output_folder.display());
+            return Err("Output folder does not exist".to_string());
         }
 
         let thread_arg = format!("ffmpeg:-threads {}", multithread_utils::MultiThreadUtils::get_num_cpus() - 1);
@@ -46,7 +45,7 @@ impl ConvertMp4 {
 
         match output {
             Ok(output) if output.status.success() => {
-                println!("yt-dlp executed successfully.");
+                println!("yt-dlp executed successfully.{}", output_file_path.display());
                 Ok(())
             }
             Ok(output) => {
