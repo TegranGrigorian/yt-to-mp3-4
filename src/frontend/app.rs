@@ -73,19 +73,16 @@ impl eframe::App for App {
                     );
                 }
                 AppState::DownloadScreen => {
-                    // Clone the variables before calling `download_screen`
-                    let mut input_url = self.input_url.clone(); // Use a local variable for input_url
-                    let format = self.format.clone();
-                    let video_type = self.video_type.clone();
+                    // Use a mutable reference to the input URL directly
                     let status_message = Arc::clone(&self.status_message);
                     let ctx = ctx.clone(); // Clone the egui context
                 
                     // Define the "Download" button callback
                     let mut on_download = {
-                        let input_url = input_url.clone();
-                        let format = format.clone();
-                        let video_type = video_type.clone();
-                        let status_message = Arc::clone(&status_message);
+                        let input_url = self.input_url.clone();
+                        let format = self.format.clone();
+                        let video_type = self.video_type.clone();
+                        let status_message = Arc::clone(&self.status_message);
                         let ctx = ctx.clone();
                 
                         move || {
@@ -103,30 +100,31 @@ impl eframe::App for App {
                     // Define the "Convert Again" button callback
                     let mut on_convert_again = {
                         let status_message = Arc::clone(&self.status_message);
-                        let state = &mut self.state;
-                        let input_url = &mut self.input_url;
+                        let state = Arc::new(Mutex::new(self.state.clone())); // Clone the state to avoid borrowing `self`
                         move || {
-                            *state = AppState::FormatAndDirectorySelection;
-                            input_url.clear(); // Clear the text box
-                            if let Ok(mut status) = status_message.lock() {
-                                *status = "All dependencies are available.".to_string(); // Reset the label
-                            }
+                            let status_message = Arc::clone(&status_message);
+                            let state = Arc::clone(&state);
+                            std::thread::spawn(move || {
+                                if let Ok(mut status) = status_message.lock() {
+                                    *status = "All dependencies are available.".to_string(); // Reset the label
+                                }
+                                if let Ok(mut state) = state.lock() {
+                                    *state = AppState::FormatAndDirectorySelection; // Update the state
+                                }
+                            });
                         }
                     };
                 
                     // Call the `download_screen` function
                     download_screen::download_screen(
                         ui,
-                        &mut input_url, // Pass the local variable for editing
+                        &mut self.input_url, // Pass a mutable reference to the input URL
                         status_message, // Pass the cloned status message
-                        &format,
-                        &video_type,
+                        &self.format,
+                        &self.video_type,
                         &mut on_download,
                         &mut on_convert_again,
                     );
-                
-                    // Update self.input_url after `download_screen` is done
-                    self.input_url = input_url;
                 }
                 AppState::SettingsScreen => {
                     settings_screen::settings_screen(ui, &mut || self.state = AppState::FormatAndDirectorySelection);

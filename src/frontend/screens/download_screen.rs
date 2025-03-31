@@ -3,8 +3,8 @@ use std::sync::{Arc, Mutex};
 
 pub fn download_screen(
     ui: &mut egui::Ui,
-    input_url: &mut String, // Accept a mutable reference
-    status_message: Arc<Mutex<String>>, // Accept the Arc<Mutex<String>> directly
+    input_url: &mut String, // Accept a mutable reference to String
+    status_message: Arc<Mutex<String>>,
     format: &String,
     video_type: &String,
     on_download: &mut dyn FnMut(),
@@ -12,10 +12,10 @@ pub fn download_screen(
 ) {
     ui.heading(format!("Download {} as {}", video_type, format));
 
-    // Input field for the YouTube URL
+    // Example UI for input URL
     ui.horizontal(|ui| {
-        ui.label("YouTube URL:");
-        ui.text_edit_singleline(input_url); // Use the mutable reference directly
+        ui.label("Input URL:");
+        ui.text_edit_singleline(input_url); // Bind the text box directly to the mutable reference
     });
 
     // Download button
