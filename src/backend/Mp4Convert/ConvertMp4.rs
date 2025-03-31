@@ -1,6 +1,8 @@
 use crate::backend::multithread_utils;
 use crate::backend::os_util::OSUtil;
 use std::process::Output;
+// use open;
+
 
 pub struct ConvertMp4 {
     input_file: String,
@@ -45,7 +47,32 @@ impl ConvertMp4 {
 
         match output {
             Ok(output) if output.status.success() => {
-                println!("yt-dlp executed successfully.{}", output_file_path.display());
+                println!("yt-dlp executed successfully.");
+                // Debug: Print the output file path
+                println!("Output file path: {}", output_file_path.display());
+
+                // Ensure the file exists before attempting to open the directory
+                // println!(output_file_path.display()); 
+                println!("Path exists");
+                if let Some(parent_dir) = output_file_path.parent() {
+                    println!("Opening file explorer at: {}", parent_dir.display()); // Debug
+                    let command_result = if cfg!(target_os = "windows") {
+                        std::process::Command::new("explorer" ).arg(parent_dir).status()
+                    } else if cfg!(target_os = "macos") {
+                        std::process::Command::new("open").arg(parent_dir).status()
+                    } else if cfg!(target_os = "linux") {
+                        std::process::Command::new("xdg-open").arg(parent_dir).status()
+                    } else {
+                        Err(std::io::Error::new(std::io::ErrorKind::Other, "Unsupported OS"))
+                    };
+
+                    if let Err(e) = command_result {
+                        eprintln!("Failed to open file explorer: {}", e);
+                    }
+                } else {
+                    eprintln!("Parent directory could not be determined.");
+                }
+
                 Ok(())
             }
             Ok(output) => {

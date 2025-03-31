@@ -1,7 +1,7 @@
-use std::option;
+// use std::option;
 
-use eframe::NativeOptions;
-use frontend::app::App;
+// use eframe::NativeOptions;
+// use frontend::app::App;
 pub mod backend {
     // pub mod initrusttube;
     pub mod UserInput;
@@ -18,14 +18,14 @@ pub mod frontend {
     pub mod app;
     pub mod app_state; // This module contains the application state, used for managing the state of the GUI
 }
-pub mod CommandLineTest;
-use tokio;
+// pub mod CommandLineTest;
+// use tokio;
 
-async fn test_tokio_sleep() {
-    println!("Before sleep...");
-    tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
-    println!("After sleep...");
-}
+// async fn test_tokio_sleep() {
+//     println!("Before sleep...");
+//     tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+//     println!("After sleep...");
+// }
 fn main() {
     // Set up a panic hook to catch any panics and log them
     std::panic::set_hook(Box::new(|panic_info| {
@@ -52,20 +52,20 @@ async fn async_main() {
         eprintln!("Error running the application: {}", e);
     }
 }
-fn check_dependencies() -> bool {
-    let yt_dlp_path = backend::os_util::OSUtil::get_yt_dlp_path();
-    let ffmpeg_path = backend::os_util::OSUtil::get_ffmpeg_path();
+// fn check_dependencies() -> bool {
+//     let yt_dlp_path = backend::os_util::OSUtil::get_yt_dlp_path();
+//     let ffmpeg_path = backend::os_util::OSUtil::get_ffmpeg_path();
 
-    let yt_dlp_exists = yt_dlp_path.exists();
-    let ffmpeg_exists = ffmpeg_path.exists();
+//     let yt_dlp_exists = yt_dlp_path.exists();
+//     let ffmpeg_exists = ffmpeg_path.exists();
 
-    if !yt_dlp_exists {
-        eprintln!("Error: yt-dlp executable not found at {:?}", yt_dlp_path);
-    }
+//     if !yt_dlp_exists {
+//         eprintln!("Error: yt-dlp executable not found at {:?}", yt_dlp_path);
+//     }
 
-    if !ffmpeg_exists {
-        eprintln!("Error: ffmpeg executable not found at {:?}", ffmpeg_path);
-    }
+//     if !ffmpeg_exists {
+//         eprintln!("Error: ffmpeg executable not found at {:?}", ffmpeg_path);
+//     }
 
-    yt_dlp_exists && ffmpeg_exists
-}
+//     yt_dlp_exists && ffmpeg_exists
+// }
