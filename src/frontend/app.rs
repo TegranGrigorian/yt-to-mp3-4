@@ -86,14 +86,24 @@ impl eframe::App for App {
                         let ctx = ctx.clone();
                 
                         move || {
-                            // Call the `handle_download` function
-                            download_logic::handle_download(
-                                input_url.clone(),
-                                format.clone(),
-                                video_type.clone(),
-                                Arc::clone(&status_message),
-                                ctx.clone(),
-                            );
+                            // Call the appropriate conversion function based on the format
+                            if format == "MP3" {
+                                download_logic::handle_download(
+                                    input_url.clone(),
+                                    format.clone(),
+                                    video_type.clone(),
+                                    Arc::clone(&status_message),
+                                    ctx.clone(),
+                                );
+                            } else if format == "MP4" {
+                                download_logic::handle_download(
+                                    input_url.clone(),
+                                    format.clone(),
+                                    video_type.clone(),
+                                    Arc::clone(&status_message),
+                                    ctx.clone(),
+                                );
+                            }
                         }
                     };
                 

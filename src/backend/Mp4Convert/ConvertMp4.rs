@@ -1,5 +1,6 @@
-use crate::backend::os_util::OSUtil; // Corrected the import to match the module name
-use std::process::Command;
+use crate::backend::multithread_utils;
+use crate::backend::os_util::OSUtil;
+use std::process::Output;
 
 pub struct ConvertMp4 {
     input_file: String,
@@ -14,45 +15,63 @@ impl ConvertMp4 {
         }
     }
 
-    pub async fn convert(&self) {
+    pub fn convert(&self) -> Result<(), String> {
+        println!("Starting conversion for URL: {}", self.input_file);
+
         let yt_dlp_path = OSUtil::get_yt_dlp_path();
         let ffmpeg_path = OSUtil::get_ffmpeg_path();
         let output_folder = OSUtil::get_output_folder();
 
         if !ffmpeg_path.exists() {
             eprintln!("Error: ffmpeg executable not found at {}", ffmpeg_path.display());
-            return;
+            return Err("ffmpeg executable not found".to_string());
         }
 
+        let thread_arg = format!("ffmpeg:-threads {}", multithread_utils::MultiThreadUtils::get_num_cpus() - 1);
         let output_file_path = output_folder.join("%(title)s.mp4");
 
-        let output = Command::new(yt_dlp_path)
+        println!("Executing yt-dlp command...");
+        let output = std::process::Command::new(yt_dlp_path)
             .env("FFMPEG", ffmpeg_path)
             .arg("-o")
-            .arg(output_file_path.to_str().unwrap()) // Specify the output file
+            .arg(output_file_path.to_str().unwrap())
             .arg("-f")
-            .arg("bestvideo+bestaudio[ext=mp4]/mp4") // Download best video and audio, merge into MP4
+            .arg("bestvideo+bestaudio[ext=mp4]/mp4")
             .arg("--concurrent-fragments")
-            .arg("4") // Enable parallel fragment downloads
-            .arg(&self.input_file) // Input video URL
+            .arg("24")
+            .arg("--postprocessor-args")
+            .arg(&thread_arg)
+            .arg(&self.input_file)
             .output();
 
         match output {
             Ok(output) if output.status.success() => {
-                println!(
-                    "Video downloaded successfully to: {}",
-                    output_file_path.to_str().unwrap()
-                );
+                println!("yt-dlp executed successfully.");
+                Ok(())
             }
             Ok(output) => {
-                eprintln!(
-                    "Failed to download video: {}",
-                    String::from_utf8_lossy(&output.stderr)
-                );
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                let error_message = format!("yt-dlp failed with error: {}", stderr);
+                eprintln!("{}", error_message);
+                Err(error_message)
             }
             Err(e) => {
-                eprintln!("Error executing yt-dlp command: {}", e);
+                let error_message = format!("Failed to execute yt-dlp: {}", e);
+                eprintln!("{}", error_message);
+                Err(error_message)
             }
+        }
+    }
+
+    fn handle_output(&self, output: Output) -> Result<(), String> {
+        if output.status.success() {
+            println!("yt-dlp executed successfully.");
+            Ok(())
+        } else {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let error_message = format!("yt-dlp failed with error: {}", stderr);
+            eprintln!("{}", error_message);
+            Err(error_message)
         }
     }
 }

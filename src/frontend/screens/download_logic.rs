@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use crate::backend;
 
+
 pub fn handle_download(
     input_url: String,
     format: String,
@@ -17,8 +18,20 @@ pub fn handle_download(
         }
         ctx.request_repaint(); // Force GUI repaint
 
-        // Simulate the download process (replace this with actual backend logic)
-        let result = backend::Mp3Convert::ConvertMp3::ConvertMp3::new(input_url.clone(), format.clone()).convert();
+        // Determine the conversion logic based on the format
+        let result = match format.as_str() {
+            "MP3" => backend::Mp3Convert::ConvertMp3::ConvertMp3::new(
+                input_url.clone(),
+                "output.mp3".to_string(),
+            )
+            .convert(),
+            "MP4" => backend::Mp4Convert::ConvertMp4::ConvertMp4::new(
+                input_url.clone(),
+                "output.mp4".to_string(),
+            )
+            .convert(),
+            _ => Err("Unsupported format".to_string()),
+        };
 
         // Update the status message based on the result
         if let Ok(mut status) = status_message.lock() {
