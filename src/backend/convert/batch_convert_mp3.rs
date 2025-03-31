@@ -23,7 +23,7 @@ impl BatchConvertMp3 {
 
             match convert_mp3.convert() {
                 Ok(_) => println!("Successfully downloaded song {}/{}", index + 1, songs.len()),
-                Err(err) => eprintln!("Failed to download song {}: {}", index + 1, err),
+                Err(err) => eprintln!("Failed to download song {}: {}c", index + 1, err),
             }
         }
 
