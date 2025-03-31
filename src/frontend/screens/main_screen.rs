@@ -21,19 +21,15 @@ pub fn format_and_directory_selection(
             });
     });
 
-    // Button to select the output directory
+    // Display the output directory based on the selected format
     ui.horizontal(|ui| {
-        ui.label("Output Directory, if none is selected, yt-to-mp3-4 folder in user's music folder:");
-        if ui.button("Choose Directory").clicked() {
-            if let Some(path) = rfd::FileDialog::new().pick_folder() {
-                *output_dir = path;
-            }
-        }
-        if output_dir.as_os_str().is_empty() {
-            if let Some(music_dir) = dirs::audio_dir() {
-                *output_dir = music_dir.join("yt-to-mp3-4");
-            }
-        }
+        ui.label("Output Directory:");
+        let default_dir = if format == "MP3" {
+            dirs::audio_dir().map(|dir| dir.join("yt-to-mp3-4")).unwrap_or_else(|| PathBuf::from("./downloads"))
+        } else {
+            dirs::video_dir().map(|dir| dir.join("yt-to-mp3-4")).unwrap_or_else(|| PathBuf::from("./downloads"))
+        };
+        *output_dir = default_dir;
         ui.label(output_dir.display().to_string());
     });
 
