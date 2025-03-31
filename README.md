@@ -1,3 +1,11 @@
+******************************************************* UPDATE ******************************************************************
+
+Version 1.0.0 of this software is out, you can download the installer on the releases page in this github repo!
+This version is very basic. It can do most of the intended features except for quality adn speed since I
+deemed those dont need to be changed. Thanks again for reading, have a good day!
+
+*********************************************************************************************************************************
+
 Hello!
 
 This is my Youtube to Mp3 and Mp4 Converter project!
