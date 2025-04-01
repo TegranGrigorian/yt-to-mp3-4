@@ -1,44 +1,35 @@
 #!/bin/bash
 echo "Installing yt-to-mp3-4 binaries..."
 
-# Create directories
-sudo mkdir -p /usr/local/bin
+# Ensure the script is run with sufficient privileges
+if [ "$EUID" -ne 0 ]; then
+    echo "Please run this script as root (e.g., using sudo)."
+    exit 1
+fi
 
-# Copy binaries to /usr/local/bin
-echo "Copying binaries to /usr/local/bin..."
-sudo cp ffmpeg /usr/local/bin/
-sudo cp ffprobe /usr/local/bin/
-sudo cp yt-dlp /usr/local/bin/
+# Define the installation directory
+INSTALL_DIR="./bin/linux"
+
+# Create the installation directory if it doesn't exist
+echo "Creating installation directory at $INSTALL_DIR..."
+mkdir -p "$INSTALL_DIR"
+
+# Copy binaries to the installation directory
+echo "Copying binaries to $INSTALL_DIR..."
+cp ffmpeg "$INSTALL_DIR/"
+cp ffprobe "$INSTALL_DIR/"
+cp yt-dlp "$INSTALL_DIR/"
 
 # Set executable permissions
 echo "Setting executable permissions..."
-sudo chmod +x /usr/local/bin/ffmpeg
-sudo chmod +x /usr/local/bin/ffprobe
-sudo chmod +x /usr/local/bin/yt-dlp
-USR_DIR ="$HOME/usr/local/bin/yt-dlp"
-#fix bin issue
-echo "Fixing binary issue..."
-echo "If issue occurs please check the ./bin/linux folder"
-echo "binaries could of not been installed correcetly!"
-sudo mkdir -p ./bin/linux 
+chmod +x "$INSTALL_DIR/ffmpeg"
+chmod +x "$INSTALL_DIR/ffprobe"
+chmod +x "$INSTALL_DIR/yt-dlp"
 
-
-echo "Binaries in bin linux folder!"
-
-#give them defaults
-INSTALL_DIR="$HOME/Downloads/yt-to-mp3-4-linux/linux/bin/linux"
-
-#copy bin
-sudo cp ffmpeg "$INSTALL_DIR/"
-sudo cp ffprobe "$INSTALL_DIR/"
-sudo cp yt-dlp "$INSTALL_DIR/"
-
-#perms
-sudo chmod +x "$INSTALL_DIR/yt-dlp"
-sudo chmod +x "$INSTALL_DIR/ffmpeg"
-sudo chmod +x "$INSTALL_DIR/ffprobe"
-
-#echos
-echo "export PATH=\"$INSTALL_DIR:\$PATH\"" >> ~/.bashrc
-echo "yt-dlp installed to $INSTALL_DIR and added to PATH."
-echo "Installation complete! Binaries are now available in /usr/local/bin."
+# Verify installation
+if [ -x "$INSTALL_DIR/yt-dlp" ] && [ -x "$INSTALL_DIR/ffmpeg" ] && [ -x "$INSTALL_DIR/ffprobe" ]; then
+    echo "Installation complete! Binaries are now available in $INSTALL_DIR."
+else
+    echo "Installation failed. Please check the script and try again."
+    exit 1
+fi
