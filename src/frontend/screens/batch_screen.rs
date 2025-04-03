@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
-use dirs::{audio_dir, video_dir};
+use dirs::{video_dir};
 use egui::Context;
 use crate::backend::batch_download::download_playlist_in_order;
 

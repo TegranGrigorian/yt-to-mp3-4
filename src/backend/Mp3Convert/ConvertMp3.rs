@@ -6,8 +6,6 @@ use crate::backend::rename_files::rename_file_to_video_title; // Import the rena
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use filetime::{FileTime, set_file_mtime}; // Add this crate to handle file timestamps
-use std::process::Output;
-use std::fs; // Import for file operations
 use std::io; // Import for error handling
 
 pub struct ConvertMp3 {

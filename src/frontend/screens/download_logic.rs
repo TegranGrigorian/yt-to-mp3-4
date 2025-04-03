@@ -1,5 +1,4 @@
 use std::sync::{Arc, Mutex};
-use std::thread;
 use std::path::PathBuf; // Import PathBuf
 use rfd::FileDialog; // Import FileDialog for directory selection
 use crate::backend;

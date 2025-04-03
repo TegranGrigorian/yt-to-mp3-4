@@ -1,6 +1,6 @@
 use eframe::egui;
 use std::path::PathBuf;
-use rfd;
+
 pub fn format_and_directory_selection(
     ui: &mut egui::Ui,
     format: &mut String,
