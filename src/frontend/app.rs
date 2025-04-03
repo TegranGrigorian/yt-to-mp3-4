@@ -44,7 +44,7 @@ impl App {
             input_url: String::new(),
             status_message: Arc::new(Mutex::new(status_message)),
             format: "MP3".to_string(), // Default format
-            output_dir: PathBuf::new(), // Default to empty path
+            output_dir: PathBuf::from("output"), // Default to "output" directory
             state: AppState::FormatAndDirectorySelection, // Start with the first screen
             video_type: String::new(), // Will be "Single" or "Batch"
             download_complete: false, // Initially, the download is not complete
@@ -82,28 +82,19 @@ impl eframe::App for App {
                         let input_url = self.input_url.clone();
                         let format = self.format.clone();
                         let video_type = self.video_type.clone();
+                        let output_dir = self.output_dir.clone(); // Pass the output directory
                         let status_message = Arc::clone(&self.status_message);
                         let ctx = ctx.clone();
                 
                         move || {
-                            // Call the appropriate conversion function based on the format
-                            if format == "MP3" {
-                                download_logic::handle_download(
-                                    input_url.clone(),
-                                    format.clone(),
-                                    video_type.clone(),
-                                    Arc::clone(&status_message),
-                                    ctx.clone(),
-                                );
-                            } else if format == "MP4" {
-                                download_logic::handle_download(
-                                    input_url.clone(),
-                                    format.clone(),
-                                    video_type.clone(),
-                                    Arc::clone(&status_message),
-                                    ctx.clone(),
-                                );
-                            }
+                            download_logic::handle_download(
+                                input_url.clone(),
+                                format.clone(),
+                                video_type.clone(),
+                                output_dir.clone(), // Pass the output directory
+                                Arc::clone(&status_message),
+                                ctx.clone(),
+                            );
                         }
                     };
                 
@@ -124,6 +115,7 @@ impl eframe::App for App {
                         status_message, // Pass the cloned status message
                         &self.format,
                         &self.video_type,
+                        &mut self.output_dir, // Pass a mutable reference to the output directory
                         &mut on_download,
                         &mut on_convert_again,
                     );

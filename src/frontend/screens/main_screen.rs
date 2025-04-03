@@ -8,7 +8,8 @@ pub fn format_and_directory_selection(
     status_message: &str,
     on_next: &mut dyn FnMut(),
 ) {
-    ui.heading("Select Format and Output Directory");
+    //this code doesnt do format, that has been moved to the download screen
+    ui.heading("Select Format");
 
     // Dropdown for selecting the format
     ui.horizontal(|ui| {
@@ -23,7 +24,7 @@ pub fn format_and_directory_selection(
 
     // Display the output directory based on the selected format
     ui.horizontal(|ui| {
-        ui.label("Output Directory:");
+        ui.label("Default Output Directory:");
         let default_dir = if format == "MP3" {
             dirs::audio_dir().map(|dir| dir.join("yt-to-mp3-4")).unwrap_or_else(|| PathBuf::from("./downloads"))
         } else {

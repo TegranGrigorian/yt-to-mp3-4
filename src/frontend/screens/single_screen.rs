@@ -49,7 +49,7 @@ impl SingleScreen {
 
                 // Spawn a new thread to run the `convert` method
                 std::thread::spawn(move || {
-                    let convert_mp3 = ConvertMp3::ConvertMp3::new(url, output_path.to_string_lossy().to_string());
+                    let convert_mp3 = ConvertMp3::ConvertMp3::new(url, PathBuf::from(&output_path));
                     let mut new_status_message = String::new();
                     match convert_mp3.convert() {
                         Ok(_) => {

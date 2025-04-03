@@ -1,16 +1,19 @@
 use crate::backend::multithread_utils;
 use crate::backend::os_util::OSUtil;
-use std::process::Output;
-// use open;
-
+use crate::backend::rename_files::rename_file_to_video_title; // Import the rename function
+use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
+use filetime::{FileTime, set_file_mtime}; // Add this crate to handle file timestamps
+use std::fs; // Import for file operations
+use std::io; // Import for error handling
 
 pub struct ConvertMp4 {
     input_file: String,
-    output_file: String,
+    output_file: PathBuf, // Changed to PathBuf for better path handling
 }
 
 impl ConvertMp4 {
-    pub fn new(input_file: String, output_file: String) -> Self {
+    pub fn new(input_file: String, output_file: PathBuf) -> Self {
         ConvertMp4 {
             input_file,
             output_file,
@@ -22,48 +25,69 @@ impl ConvertMp4 {
 
         let yt_dlp_path = OSUtil::get_yt_dlp_path();
         let ffmpeg_path = OSUtil::get_ffmpeg_path();
-        let output_folder = OSUtil::get_output_folder("mp4");
-        if !output_folder.exists() {
-            eprintln!("Error: Output folder does not exist: {}", output_folder.display());
-            return Err("Output folder does not exist".to_string());
+
+        if !ffmpeg_path.exists() {
+            eprintln!("Error: ffmpeg executable not found at {}", ffmpeg_path.display());
+            return Err("ffmpeg executable not found".to_string());
         }
 
-        let thread_arg = format!("ffmpeg:-threads {}", multithread_utils::MultiThreadUtils::get_num_cpus() - 1);
-        let output_file_path = output_folder.join("%(title)s.mp4");
+        // Ensure the output path includes a valid filename
+        let output_file_path = if self.output_file.is_dir() {
+            self.output_file.join("output.mp4") // Default to "output.mp4" if only a directory is provided
+        } else {
+            self.output_file.clone()
+        };
 
         println!("Executing yt-dlp command...");
         let output = std::process::Command::new(yt_dlp_path)
             .env("FFMPEG", ffmpeg_path)
             .arg("-o")
-            .arg(output_file_path.to_str().unwrap())
+            .arg(output_file_path.to_str().unwrap()) // Use the updated output path
             .arg("-f")
             .arg("bestvideo+bestaudio[ext=mp4]/mp4")
             .arg("--concurrent-fragments")
             .arg("24")
             .arg("--postprocessor-args")
-            .arg(&thread_arg)
+            .arg(format!("ffmpeg:-threads {}", multithread_utils::MultiThreadUtils::get_num_cpus() - 1))
             .arg(&self.input_file)
             .output();
 
         match output {
             Ok(output) if output.status.success() => {
                 println!("yt-dlp executed successfully.");
-                // Debug: Print the output file path
                 println!("Output file path: {}", output_file_path.display());
 
-                // Ensure the file exists before attempting to open the directory
-                // println!(output_file_path.display()); 
-                println!("Path exists");
+                // Update the file's modification time to the current date
+                if output_file_path.exists() {
+                    let now = SystemTime::now()
+                        .duration_since(UNIX_EPOCH)
+                        .expect("Time went backwards");
+                    let file_time = FileTime::from_unix_time(now.as_secs() as i64, now.subsec_nanos());
+                    if let Err(e) = set_file_mtime(&output_file_path, file_time) {
+                        eprintln!("Failed to update file modification time: {}", e);
+                    } else {
+                        println!("File modification time updated to the current date.");
+                    }
+
+                    // Delegate renaming to the rename_files module
+                    if let Err(e) = rename_file_to_video_title(&output_file_path, &self.input_file) {
+                        eprintln!("Failed to rename file: {}", e);
+                    }
+                } else {
+                    eprintln!("Output file does not exist.");
+                }
+
+                // Open the file's parent directory
                 if let Some(parent_dir) = output_file_path.parent() {
-                    println!("Opening file explorer at: {}", parent_dir.display()); // Debug
+                    println!("Opening file explorer at: {}", parent_dir.display());
                     let command_result = if cfg!(target_os = "windows") {
-                        std::process::Command::new("explorer" ).arg(parent_dir).status()
+                        std::process::Command::new("explorer").arg(parent_dir).status()
                     } else if cfg!(target_os = "macos") {
                         std::process::Command::new("open").arg(parent_dir).status()
                     } else if cfg!(target_os = "linux") {
                         std::process::Command::new("xdg-open").arg(parent_dir).status()
                     } else {
-                        Err(std::io::Error::new(std::io::ErrorKind::Other, "Unsupported OS"))
+                        Err(io::Error::new(io::ErrorKind::Other, "Unsupported OS"))
                     };
 
                     if let Err(e) = command_result {
@@ -86,18 +110,6 @@ impl ConvertMp4 {
                 eprintln!("{}", error_message);
                 Err(error_message)
             }
-        }
-    }
-
-    fn handle_output(&self, output: Output) -> Result<(), String> {
-        if output.status.success() {
-            println!("yt-dlp executed successfully.");
-            Ok(())
-        } else {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            let error_message = format!("yt-dlp failed with error: {}", stderr);
-            eprintln!("{}", error_message);
-            Err(error_message)
         }
     }
 }
