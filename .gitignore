@@ -2,3 +2,4 @@
 downloads/*
 !downloads/Kanye\ West-\ Welcome\ To\ Heartbreak\ HD.mp3
 /release
+!release/linux-*.tar.gz
