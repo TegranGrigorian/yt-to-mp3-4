@@ -10,6 +10,7 @@ pub mod backend {
     pub mod multithread_utils;
     pub mod batch_download;
     pub mod os_util; // Corrected the module name to os_util to match the file name
+    pub mod rename_files;
 }
 pub mod frontend {
     pub mod components; // This module contains reusable components like buttons
