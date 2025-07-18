@@ -58,7 +58,7 @@ impl ConvertMp3 {
             .arg("--concurrent-fragments")
             .arg("24")
             .arg("--extractor-args")
-            .arg("youtube:player_client=web")
+            .arg("youtube:player_client=ios") // <-- try ios client
             .arg("--postprocessor-args")
             .arg(format!("ffmpeg:-threads {}", multithread_utils::MultiThreadUtils::get_num_cpus() - 1))
             .arg(&self.input_file)
@@ -164,6 +164,24 @@ impl ConvertMp3 {
                 Some(title)
             }
             _ => None,
+        }
+    }
+
+    pub fn list_formats(&self) {
+        let yt_dlp_path = OSUtil::get_yt_dlp_path();
+        let output = std::process::Command::new(yt_dlp_path)
+            .arg("--list-formats")
+            .arg(&self.input_file)
+            .output();
+
+        match output {
+            Ok(output) => {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                println!("Available formats:\n{}", stdout);
+            }
+            Err(e) => {
+                eprintln!("Failed to list formats: {}", e);
+            }
         }
     }
 }

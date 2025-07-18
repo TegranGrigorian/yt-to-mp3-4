@@ -7,7 +7,7 @@ impl OSUtil {
     //get ytdlp for os
     pub fn get_yt_dlp_path() -> PathBuf {
         let path = if cfg!(target_os = "windows") {
-            PathBuf::from("./bin/windows/yt-dlp.exe")
+            PathBuf::from("./bin\\windows\\yt-dlp.exe")
         } else {
             PathBuf::from("./bin/linux/yt-dlp")
         };
