@@ -50,6 +50,8 @@ impl ConvertMp4 {
             .env("FFMPEG", ffmpeg_path)
             .arg("-o")
             .arg(output_template.to_str().unwrap())
+            .arg("-f")
+            .arg("bestvideo[ext=mp4][height<=?1080]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best[ext=mp4]/best")
             .arg("--merge-output-format")
             .arg("mp4")
             .arg("--embed-metadata")

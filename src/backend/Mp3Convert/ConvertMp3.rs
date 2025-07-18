@@ -58,7 +58,10 @@ impl ConvertMp3 {
             .arg("--concurrent-fragments")
             .arg("24")
             .arg("--extractor-args")
-            .arg("youtube:player_client=ios") // <-- try ios client
+            .arg("youtube:player_client=ios") // use ios client
+            .arg("--no-check-certificate")
+            .arg("--retries")
+            .arg("10")
             .arg("--postprocessor-args")
             .arg(format!("ffmpeg:-threads {}", multithread_utils::MultiThreadUtils::get_num_cpus() - 1))
             .arg(&self.input_file)
