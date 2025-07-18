@@ -26,6 +26,9 @@ chmod +x "$INSTALL_DIR/ffmpeg"
 chmod +x "$INSTALL_DIR/ffprobe"
 chmod +x "$INSTALL_DIR/yt-dlp"
 
+#install fmpeg
+sudo apt install ffmpeg
+
 # Verify installation
 if [ -x "$INSTALL_DIR/yt-dlp" ] && [ -x "$INSTALL_DIR/ffmpeg" ] && [ -x "$INSTALL_DIR/ffprobe" ]; then
     echo "Installation complete! Binaries are now available in $INSTALL_DIR."
