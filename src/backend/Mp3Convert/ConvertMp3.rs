@@ -1,5 +1,3 @@
-use egui::epaint::tessellator::path;
-
 use crate::backend::multithread_utils;
 use crate::backend::os_util::OSUtil;
 use crate::backend::rename_files::rename_file_to_video_title; // Import the rename function
@@ -7,6 +5,7 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use filetime::{FileTime, set_file_mtime}; // Add this crate to handle file timestamps
 use std::io; // Import for error handling
+use std::fs; // Import for filesystem operations
 
 pub struct ConvertMp3 {
     input_file: String,
@@ -32,18 +31,25 @@ impl ConvertMp3 {
             return Err("ffmpeg executable not found".to_string());
         }
 
-        // Ensure the output path includes a valid filename
-        let output_file_path = if self.output_file.is_dir() {
-            self.output_file.join("output.mp3") // Default to "output.mp3" if only a directory is provided
+        // Determine the output template for yt-dlp and expected output path
+        let (output_template, expected_output_path) = if self.output_file.is_dir() {
+            // If it's a directory, let yt-dlp use default naming in that directory
+            let template = self.output_file.join("%(title)s.%(ext)s");
+            (template.clone(), template) // We'll need to find the actual file later
+        } else if self.output_file.extension().is_none() {
+            // If no extension provided, add .mp3 extension for both template and expected path
+            let with_extension = PathBuf::from(format!("{}.mp3", self.output_file.display()));
+            (self.output_file.clone(), with_extension)
         } else {
-            self.output_file.clone()
+            // File already has extension, use as-is
+            (self.output_file.clone(), self.output_file.clone())
         };
 
         println!("Executing yt-dlp command...");
         let output = std::process::Command::new(yt_dlp_path)
             .env("FFMPEG", ffmpeg_path)
             .arg("-o")
-            .arg(output_file_path.to_str().unwrap()) // Use the updated output path
+            .arg(output_template.to_str().unwrap())
             .arg("--extract-audio")
             .arg("--audio-format")
             .arg("mp3")
@@ -61,30 +67,55 @@ impl ConvertMp3 {
         match output {
             Ok(output) if output.status.success() => {
                 println!("yt-dlp executed successfully.");
-                println!("Output file path: {}", output_file_path.display());
+                println!("Expected output file path: {}", expected_output_path.display());
 
-                // Update the file's modification time to the current date
-                if output_file_path.exists() {
+                // Check if the file exists at the expected location
+                if expected_output_path.exists() {
                     let now = SystemTime::now()
                         .duration_since(UNIX_EPOCH)
                         .expect("Time went backwards");
                     let file_time = FileTime::from_unix_time(now.as_secs() as i64, now.subsec_nanos());
-                    if let Err(e) = set_file_mtime(&output_file_path, file_time) {
+                    if let Err(e) = set_file_mtime(&expected_output_path, file_time) {
                         eprintln!("Failed to update file modification time: {}", e);
                     } else {
                         println!("File modification time updated to the current date.");
                     }
 
                     // Delegate renaming to the rename_files module
-                    if let Err(e) = rename_file_to_video_title(&output_file_path, &self.input_file) {
+                    if let Err(e) = rename_file_to_video_title(&expected_output_path, &self.input_file) {
                         eprintln!("Failed to rename file: {}", e);
                     }
                 } else {
-                    eprintln!("Output file does not exist.");
+                    eprintln!("Output file does not exist at expected path: {}", expected_output_path.display());
+                    eprintln!("yt-dlp might have created the file with a different name.");
+                    
+                    // If the file doesn't exist at expected path, check the parent directory
+                    if let Some(parent_dir) = expected_output_path.parent() {
+                        println!("Checking directory: {}", parent_dir.display());
+                        if let Ok(entries) = fs::read_dir(parent_dir) {
+                            for entry in entries.flatten() {
+                                let path = entry.path();
+                                if path.extension().map_or(false, |ext| ext == "mp3") {
+                                    println!("Found MP3 file: {}", path.display());
+                                }
+                            }
+                        }
+                    }
                 }
 
                 // Open the file's parent directory
-                if let Some(parent_dir) = output_file_path.parent() {
+                let parent_dir = if expected_output_path.exists() {
+                    expected_output_path.parent()
+                } else {
+                    // If file doesn't exist at expected path, open the target directory
+                    if self.output_file.is_dir() {
+                        Some(self.output_file.as_path())
+                    } else {
+                        self.output_file.parent()
+                    }
+                };
+
+                if let Some(parent_dir) = parent_dir {
                     println!("Opening file explorer at: {}", parent_dir.display());
                     let command_result = if cfg!(target_os = "windows") {
                         std::process::Command::new("explorer").arg(parent_dir).status()
