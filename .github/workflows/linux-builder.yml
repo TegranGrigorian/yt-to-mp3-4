@@ -43,12 +43,16 @@ jobs:
         cp target/release/yt-to-mp3-4 bin/linux/
         tar -czf dist/yt-to-mp3-4-linux-x86.tar.gz -C bin/linux .
 
+    - name: Check if file exists
+      run: |
+        ls -la dist/
+        file dist/yt-to-mp3-4-linux-x86.tar.gz
+
     - name: Upload to GitHub Release
-      uses: actions/upload-release-asset@v1
-      with:
-        upload_url: https://uploads.github.com/repos/TegranGrigorian/yt-to-mp3-4/releases/${{ secrets.RELEASE_ID }}/assets{?name,label}
-        asset_path: dist/yt-to-mp3-4-linux-x86.tar.gz
-        asset_name: yt-to-mp3-4-linux-x86.tar.gz
-        asset_content_type: application/gzip
+      run: |
+        # Delete existing asset if it exists (ignore errors if it doesn't exist)
+        gh release delete-asset Beta yt-to-mp3-4-linux-x86.tar.gz --yes || true
+        # Upload new asset
+        gh release upload Beta dist/yt-to-mp3-4-linux-x86.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GHUB_TOKEN }}
