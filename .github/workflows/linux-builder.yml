@@ -1,8 +1,9 @@
-name: Linux build and dependency obtainer
+name: Daily Linux Build and Upload
 
 on:
   schedule:
     - cron: "0 0 * * *" # Runs daily at midnight UTC
+  workflow_dispatch: # tee heee for testing
 
 jobs:
   build-and-upload:
