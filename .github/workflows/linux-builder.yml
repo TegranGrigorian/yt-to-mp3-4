@@ -28,6 +28,14 @@ jobs:
         curl -L https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz -o ffmpeg.tar.xz
         tar -xf ffmpeg.tar.xz --strip-components=1 -C bin/linux
         chmod +x bin/linux/ffmpeg bin/linux/ffprobe
+        # Clean up unnecessary files
+        rm -rf bin/linux/model
+        rm -rf bin/linux/manpages
+        rm -f bin/linux/GPLv3.txt
+        rm -f bin/linux/readme.txt
+        rm -f bin/linux/install.sh
+        rm -f bin/linux/qt-faststart
+        rm -f ffmpeg.tar.xz
 
     - name: Download yt-dlp
       run: |
