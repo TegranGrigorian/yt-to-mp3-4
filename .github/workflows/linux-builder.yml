@@ -1,0 +1,55 @@
+name: Linux build and dependency obtainer
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # Runs daily at midnight UTC
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Checkout the repository
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    # Step 2: Set up Rust
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+
+    # Step 3: Download the latest ffmpeg
+    - name: Download ffmpeg
+      run: |
+        mkdir -p bin/linux
+        curl -L https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz -o ffmpeg.tar.xz
+        tar -xf ffmpeg.tar.xz --strip-components=1 -C bin/linux
+        chmod +x bin/linux/ffmpeg bin/linux/ffprobe
+
+    # Step 4: Download the latest yt-dlp
+    - name: Download yt-dlp
+      run: |
+        curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o bin/linux/yt-dlp
+        chmod +x bin/linux/yt-dlp
+
+    # Step 5: Build the project
+    - name: Build Project
+      run: cargo build --release
+
+    # Step 6: Package the binaries into a .tar.gz
+    - name: Package Binaries
+      run: |
+        mkdir -p dist
+        cp target/release/yt-to-mp3-4 bin/linux/
+        tar -czf dist/yt-to-mp3-4-linux-x86.tar.gz -C bin/linux .
+
+    # Step 7: Upload to GitHub Release
+    - name: Upload to GitHub Release
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: https://uploads.github.com/repos/TegranGrigorian/yt-to-mp3-4/releases/${{ secrets.RELEASE_ID }}/assets{?name,label}
+        asset_path: dist/yt-to-mp3-4-linux-x86.tar.gz
+        asset_name: yt-to-mp3-4-linux-x86.tar.gz
+        asset_content_type: application/gzip
