@@ -33,8 +33,8 @@ impl ConvertMp3 {
 
         // Determine the output template for yt-dlp and expected output path
         let (output_template, expected_output_path) = if self.output_file.is_dir() {
-            // If it's a directory, let yt-dlp use default naming in that directory
-            let template = self.output_file.join("%(title)s.%(ext)s");
+            // If it's a directory, use sanitized title template to avoid filesystem issues
+            let template = self.output_file.join("%(title).200s.%(ext)s");
             (template.clone(), template) // We'll need to find the actual file later
         } else if self.output_file.extension().is_none() {
             // If no extension provided, add .mp3 extension for both template and expected path
@@ -55,10 +55,10 @@ impl ConvertMp3 {
             .arg("mp3")
             .arg("--audio-quality")
             .arg("0")
+            .arg("--restrict-filenames") // Sanitize filenames to avoid special characters
             .arg("--concurrent-fragments")
             .arg("24")
-            .arg("--extractor-args")
-            .arg("youtube:player_client=ios") // use ios client
+            // Let yt-dlp automatically choose the best client without PO token requirements
             .arg("--no-check-certificate")
             .arg("--retries")
             .arg("10")

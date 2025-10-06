@@ -33,8 +33,8 @@ impl ConvertMp4 {
 
         // Determine the output template for yt-dlp and expected output path
         let (output_template, expected_output_path) = if self.output_file.is_dir() {
-            // If it's a directory, let yt-dlp use default naming in that directory
-            let template = self.output_file.join("%(title)s.%(ext)s");
+            // If it's a directory, use sanitized title template to avoid filesystem issues
+            let template = self.output_file.join("%(title).200s.%(ext)s");
             (template.clone(), template) // We'll need to find the actual file later
         } else if self.output_file.extension().is_none() {
             // If no extension provided, add .mp4 extension for both template and expected path
@@ -51,21 +51,16 @@ impl ConvertMp4 {
             .arg("-o")
             .arg(output_template.to_str().unwrap())
             .arg("-f")
-            .arg("bestvideo[ext=mp4][height<=?1080]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best[ext=mp4]/best")
-            .arg("--merge-output-format")
-            .arg("mp4")
-            .arg("--embed-metadata")
+            .arg("mp4") // Simple mp4 format request like MP3 uses simple audio format
+            .arg("--restrict-filenames") // Sanitize filenames to avoid special characters
             .arg("--concurrent-fragments")
             .arg("24")
-            .arg("--extractor-args")
-            .arg("youtube:player_client=ios") // use ios client
-            .arg("--postprocessor-args")
-            .arg(format!("ffmpeg:-threads {} -movflags +faststart -avoid_negative_ts make_zero -fflags +genpts", multithread_utils::MultiThreadUtils::get_num_cpus() - 1))
+            // Let yt-dlp automatically choose the best client without PO token requirements
             .arg("--no-check-certificate")
             .arg("--retries")
             .arg("10")
-            .arg("--fragment-retries")
-            .arg("10")
+            .arg("--postprocessor-args")
+            .arg(format!("ffmpeg:-threads {}", multithread_utils::MultiThreadUtils::get_num_cpus() - 1))
             .arg(&self.input_file)
             .output();
 
@@ -100,8 +95,19 @@ impl ConvertMp4 {
                         if let Ok(entries) = fs::read_dir(parent_dir) {
                             for entry in entries.flatten() {
                                 let path = entry.path();
-                                if path.extension().map_or(false, |ext| ext == "mp4") {
-                                    println!("Found MP4 file: {}", path.display());
+                                let is_video_file = path.extension().map_or(false, |ext| ext == "mp4") || 
+                                                   (path.extension().is_none() && path.file_name().unwrap_or_default() != "");
+                                
+                                if is_video_file && path.is_file() {
+                                    println!("Found video file: {}", path.display());
+                                    
+                                    // Try to rename this file to the video title
+                                    if let Err(e) = rename_file_to_video_title(&path, &self.input_file) {
+                                        eprintln!("Failed to rename file: {}", e);
+                                    } else {
+                                        println!("Successfully renamed video file to video title");
+                                        break; // Stop after renaming the first video file found
+                                    }
                                 }
                             }
                         }

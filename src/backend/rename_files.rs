@@ -27,10 +27,13 @@ pub fn rename_file_to_video_title(file_path: &Path, input_url: &str) -> Result<(
             let sanitized_title = sanitize_filename::sanitize(video_title);
 
             // Construct the new file path
+            let extension = file_path.extension()
+                .map(|ext| ext.to_string_lossy().to_string())
+                .unwrap_or_else(|| "mp4".to_string()); // Default to mp4 if no extension
             let new_file_path = file_path
                 .parent()
                 .unwrap()
-                .join(format!("{}.{}", sanitized_title, file_path.extension().unwrap().to_string_lossy()));
+                .join(format!("{}.{}", sanitized_title, extension));
 
             // Rename the file
             fs::rename(file_path, &new_file_path).map_err(|e| format!("Failed to rename file: {}", e))?;
