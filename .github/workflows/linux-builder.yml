@@ -1,9 +1,13 @@
 name: Daily Linux Build and Upload
 
-on:
+on: 
+  push:
+    branches:
+      - main
   schedule:
     - cron: "0 0 * * *"
   workflow_dispatch:
+
 
 permissions:
   contents: write
@@ -33,7 +37,6 @@ jobs:
         rm -rf bin/linux/manpages
         rm -f bin/linux/GPLv3.txt
         rm -f bin/linux/readme.txt
-        rm -f bin/linux/install.sh
         rm -f bin/linux/qt-faststart
         rm -f ffmpeg.tar.xz
 
