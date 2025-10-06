@@ -51,4 +51,4 @@ jobs:
         asset_name: yt-to-mp3-4-linux-x86.tar.gz
         asset_content_type: application/gzip
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GHUB_TOKEN }}
