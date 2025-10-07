@@ -65,9 +65,9 @@ jobs:
     - name: Check if setup file exists
       run: |
         Get-ChildItem -Path dist\ -Name
-        if (Test-Path "dist\yt-to-mp3-4-setup.exe") {
+        if (Test-Path "dist\yt-to-mp3-4.setup.windows.x64.exe") {
           Write-Output "Setup file created successfully"
-          Get-Item "dist\yt-to-mp3-4-setup.exe" | Select-Object Name, Length
+          Get-Item "dist\yt-to-mp3-4.setup.windows.x64.exe" | Select-Object Name, Length
         } else {
           Write-Error "Setup file was not created"
           exit 1
@@ -77,9 +77,9 @@ jobs:
     - name: Upload to GitHub Release
       run: |
         # Delete existing asset if it exists (ignore errors if it doesn't exist)
-        gh release delete-asset Beta yt-to-mp3-4-setup.exe --yes 2>$null || $true
+        gh release delete-asset Beta yt-to-mp3-4.setup.windows.x64.exe --yes 2>$null || $true
         # Upload new asset
-        gh release upload Beta dist\yt-to-mp3-4-setup.exe
+        gh release upload Beta dist\yt-to-mp3-4.setup.windows.x64.exe
       shell: pwsh
       env:
         GITHUB_TOKEN: ${{ secrets.GHUB_TOKEN }}
