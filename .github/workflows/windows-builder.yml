@@ -1,0 +1,85 @@
+name: Daily Windows Build and Upload
+
+on: 
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-upload:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+
+    - name: Download ffmpeg
+      run: |
+        New-Item -ItemType Directory -Force -Path bin\windows
+        Invoke-WebRequest -Uri "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" -OutFile "ffmpeg.zip"
+        Expand-Archive -Path "ffmpeg.zip" -DestinationPath "temp_ffmpeg"
+        $ffmpegDir = Get-ChildItem -Path "temp_ffmpeg" -Directory | Select-Object -First 1
+        Copy-Item "$($ffmpegDir.FullName)\bin\ffmpeg.exe" -Destination "bin\windows\"
+        Copy-Item "$($ffmpegDir.FullName)\bin\ffprobe.exe" -Destination "bin\windows\"
+        Remove-Item -Recurse -Force "temp_ffmpeg"
+        Remove-Item -Force "ffmpeg.zip"
+      shell: pwsh
+
+    - name: Download yt-dlp
+      run: |
+        Invoke-WebRequest -Uri "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" -OutFile "bin\windows\yt-dlp.exe"
+      shell: pwsh
+
+    - name: Build Project
+      run: cargo build --release
+
+    - name: Prepare Setup Files
+      run: |
+        New-Item -ItemType Directory -Force -Path dist
+        Copy-Item "target\release\yt-to-mp3-4.exe" -Destination "bin\windows\"
+      shell: pwsh
+
+    - name: Install Inno Setup
+      run: |
+        Invoke-WebRequest -Uri "https://jrsoftware.org/download.php/is.exe" -OutFile "innosetup.exe"
+        Start-Process -FilePath "innosetup.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait
+      shell: pwsh
+
+    - name: Compile Setup with Inno Setup
+      run: |
+        & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "bin\windows\yt-to-mp3-4.iss"
+      shell: pwsh
+
+    - name: Check if setup file exists
+      run: |
+        Get-ChildItem -Path dist\ -Name
+        if (Test-Path "dist\yt-to-mp3-4-setup.exe") {
+          Write-Output "Setup file created successfully"
+          Get-Item "dist\yt-to-mp3-4-setup.exe" | Select-Object Name, Length
+        } else {
+          Write-Error "Setup file was not created"
+          exit 1
+        }
+      shell: pwsh
+
+    - name: Upload to GitHub Release
+      run: |
+        # Delete existing asset if it exists (ignore errors if it doesn't exist)
+        gh release delete-asset Beta yt-to-mp3-4-setup.exe --yes 2>$null || $true
+        # Upload new asset
+        gh release upload Beta dist\yt-to-mp3-4-setup.exe
+      shell: pwsh
+      env:
+        GITHUB_TOKEN: ${{ secrets.GHUB_TOKEN }}

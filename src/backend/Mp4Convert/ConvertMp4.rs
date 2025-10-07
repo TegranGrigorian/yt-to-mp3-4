@@ -90,23 +90,46 @@ impl ConvertMp4 {
                     eprintln!("yt-dlp might have created the file with a different name.");
                     
                     // If the file doesn't exist at expected path, check the parent directory
+                    // Only look for recently created files or files with specific naming pattern
                     if let Some(parent_dir) = expected_output_path.parent() {
                         println!("Checking directory: {}", parent_dir.display());
                         if let Ok(entries) = fs::read_dir(parent_dir) {
+                            let now = SystemTime::now();
                             for entry in entries.flatten() {
                                 let path = entry.path();
-                                let is_video_file = path.extension().map_or(false, |ext| ext == "mp4") || 
-                                                   (path.extension().is_none() && path.file_name().unwrap_or_default() != "");
                                 
-                                if is_video_file && path.is_file() {
-                                    println!("Found video file: {}", path.display());
+                                if path.is_file() {
+                                    let file_name = path.file_name()
+                                        .and_then(|name| name.to_str())
+                                        .unwrap_or("");
                                     
-                                    // Try to rename this file to the video title
-                                    if let Err(e) = rename_file_to_video_title(&path, &self.input_file) {
-                                        eprintln!("Failed to rename file: {}", e);
-                                    } else {
-                                        println!("Successfully renamed video file to video title");
-                                        break; // Stop after renaming the first video file found
+                                    // Check if file starts with "yt-to-mp3-4" (regardless of extension)
+                                    let starts_with_app_name = file_name.starts_with("yt-to-mp3-4");
+                                    
+                                    // Also check if file was created recently (within 1 minute) and is an mp4
+                                    let is_recent_mp4 = {
+                                        let is_mp4 = path.extension().map_or(false, |ext| ext == "mp4");
+                                        if is_mp4 {
+                                            if let Ok(metadata) = path.metadata() {
+                                                if let Ok(created_time) = metadata.created() {
+                                                    if let Ok(duration) = now.duration_since(created_time) {
+                                                        duration.as_secs() < 60 // 1 minute
+                                                    } else { false }
+                                                } else { false }
+                                            } else { false }
+                                        } else { false }
+                                    };
+                                    
+                                    if starts_with_app_name || is_recent_mp4 {
+                                        println!("Found target video file: {}", path.display());
+                                        
+                                        // Try to rename this file to the video title
+                                        if let Err(e) = rename_file_to_video_title(&path, &self.input_file) {
+                                            eprintln!("Failed to rename file: {}", e);
+                                        } else {
+                                            println!("Successfully renamed video file to video title");
+                                            break; // Stop after renaming the first matching video file
+                                        }
                                     }
                                 }
                             }
