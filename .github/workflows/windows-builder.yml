@@ -53,8 +53,10 @@ jobs:
 
     - name: Install Inno Setup
       run: |
-        Invoke-WebRequest -Uri "https://jrsoftware.org/download.php/is.exe" -OutFile "innosetup.exe"
-        Start-Process -FilePath "innosetup.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait
+        # Use Chocolatey to install Inno Setup in CI; more reliable than direct download.
+        # Chocolatey is available on `windows-latest` runners.
+        Set-ExecutionPolicy Bypass -Scope Process -Force
+        choco install innosetup --no-progress -y
       shell: pwsh
 
     - name: Compile Setup with Inno Setup
